@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+# Utility Insight 📊
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Een moderne web-applicatie om je nutsverbruik (gas, water, elektriciteit) bij te houden en te analyseren. De app ondersteunt live koppelingen met de HomeWizard P1 meter en Zonneplan voor dynamische tarieven.
 
-Currently, two official plugins are available:
+## ✨ Kenmerken
+- 📈 **Dashboard:** Visualiseer je verbruik en kosten in één oogopslag.
+- ⚡ **HomeWizard Integratie:** Live uitlezen van je P1 meter.
+- 💰 **Dynamische Tarieven:** Directe koppeling met Zonneplan prijzen.
+- 📝 **Handmatige Invoer:** Voeg eenvoudig meterstanden toe voor gas, water en stroom.
+- 🏠 **Meerdere Huishoudens:** Beheer verschillende locaties vanuit één app.
+- 💾 **Lokale Opslag:** Je data wordt veilig opgeslagen in een lokaal bestand (`data/db.json`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🚀 Installatie & Gebruik
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Volg deze stappen om de applicatie op je eigen computer te draaien:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Project Clonen
+Open je terminal en clone de repository:
+```bash
+git clone https://github.com/mvdbaart/meterstanden.git
+cd meterstanden
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Afhankelijkheden Installeren
+Installeer de benodigde pakketten met npm:
+```bash
+npm install
 ```
+
+### 3. De Applicatie Starten
+Om zowel de **frontend** (de interface) als de **backend** (de database-server) tegelijk te starten, gebruik je:
+```bash
+npm run dev:all
+```
+
+De applicatie is nu bereikbaar op:
+- **Lokaal:** [http://localhost:5173/](http://localhost:5173/)
+- **Netwerk:** `http://[JOUW-IP-ADRES]:5173/` (handig voor gebruik op tablet of telefoon)
+
+---
+
+## 📂 Project Structuur
+- `/src`: De React frontend code (TypeScript + Vite).
+- `/server`: Een kleine Express backend die zorgt dat data tussen verschillende apparaten gedeeld kan worden.
+- `/data`: Bevat `db.json`, jouw persoonlijke database. (Wordt niet gesynchroniseerd met GitHub voor privacy).
+
+## 🛠 Ontwikkeling
+- `npm run dev`: Start alleen de frontend (zonder database-verbinding).
+- `npm run server`: Start alleen de backend server op poort 3001.
+- `npm run build`: Maakt een productie-build van de applicatie.
+
+---
+*Gemaakt voor eigen gebruik en optimalisatie van energieverbruik.*
