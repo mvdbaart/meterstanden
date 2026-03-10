@@ -6,13 +6,14 @@ import { calculateConsumption, calculateCosts, getTrendData, getPeriodBoundaries
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getBatteryStatus } from '../lib/batteryApi';
 import type { BatteryStatus } from '../lib/batteryApi';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function Dashboard() {
     const { readings } = useMeterReadings();
     const { tariffs, currentHousehold } = useAppContext();
     const { data: p1Data, isActive: hasP1, error: p1Error } = useHomeWizard();
     const [period, setPeriod] = useState<TimePeriod>('month');
+    const [offset, setOffset] = useState(0);
 
     // Battery state
     const [batteryData, setBatteryData] = useState<BatteryStatus | null>(null);
@@ -33,9 +34,27 @@ export function Dashboard() {
         return () => clearInterval(interval);
     }, [currentHousehold?.battery_ip, currentHousehold?.battery_port]);
 
+    // Handle period type change
+    const handlePeriodChange = (p: TimePeriod) => {
+        setPeriod(p);
+        setOffset(0); // Reset to current period
+    };
+
     // Period boundaries
-    const { start: currentStart, end: currentEnd } = useMemo(() => getPeriodBoundaries(period), [period]);
-    const { start: prevStart, end: prevEnd } = useMemo(() => getPeriodBoundaries(period, -1), [period]);
+    const { start: currentStart, end: currentEnd } = useMemo(() => getPeriodBoundaries(period, offset), [period, offset]);
+    const { start: prevStart, end: prevEnd } = useMemo(() => getPeriodBoundaries(period, offset - 1), [period, offset]);
+
+    // Format period label
+    const periodLabel = useMemo(() => {
+        const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+        if (period === 'year') return currentStart.getFullYear().toString();
+        if (period === 'month') return currentStart.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
+
+        // For week, show range
+        const startStr = currentStart.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+        const endStr = currentEnd.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `${startStr} - ${endStr}`;
+    }, [period, currentStart, currentEnd]);
 
     // Current period consumption
     const gasCurrent = calculateConsumption(readings, 'gas', undefined, currentStart, currentEnd);
@@ -49,7 +68,7 @@ export function Dashboard() {
     const elecPrev = calculateConsumption(readings, 'electricity', undefined, prevStart, prevEnd);
     const costsPrev = calculateCosts(readings, tariffs, prevStart, prevEnd);
 
-    const chartData = useMemo(() => getTrendData(readings, period), [readings, period]);
+    const chartData = useMemo(() => getTrendData(readings, period, offset), [readings, period, offset]);
 
     const getDiff = (current: number, prev: number) => {
         if (prev === 0) return null;
@@ -59,14 +78,35 @@ export function Dashboard() {
 
     return (
         <div className="flex flex-col gap-4 md:gap-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold text-slate-800">Overzicht</h2>
-                <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200 w-full sm:w-auto">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="flex items-center gap-4 w-full lg:w-auto">
+                    <h2 className="text-2xl font-bold text-slate-800">Overzicht</h2>
+                    <div className="flex items-center bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-sm">
+                        <button
+                            onClick={() => setOffset(prev => prev - 1)}
+                            className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <span className="px-4 text-sm font-semibold text-slate-700 min-w-[140px] text-center">
+                            {periodLabel}
+                        </span>
+                        <button
+                            onClick={() => setOffset(prev => prev + 1)}
+                            disabled={offset >= 0}
+                            className={`p-1 hover:bg-slate-100 rounded-lg text-slate-500 transition ${offset >= 0 ? 'opacity-20 cursor-not-allowed' : ''}`}
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200 w-full lg:w-auto">
                     {(['week', 'month', 'year'] as TimePeriod[]).map((p) => (
                         <button
                             key={p}
-                            onClick={() => setPeriod(p)}
-                            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${period === p
+                            onClick={() => handlePeriodChange(p)}
+                            className={`flex-1 lg:flex-none px-6 py-1.5 rounded-lg text-sm font-medium transition-all ${period === p
                                     ? 'bg-white text-blue-600 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700'
                                 }`}
@@ -105,8 +145,8 @@ export function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                {/* HomeWizard P1 Widget */}
-                {hasP1 && (
+                {/* HomeWizard P1 Widget - Only show for CURRENT period (offset 0) */}
+                {hasP1 && offset === 0 && (
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 className="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
                             Actueel Verbruik (P1)
@@ -125,8 +165,8 @@ export function Dashboard() {
                     </div>
                 )}
 
-                {/* Battery Status (if available) */}
-                {currentHousehold?.battery_ip && batteryData && !batteryError && (
+                {/* Battery Status (if available) - Only show for CURRENT period (offset 0) */}
+                {currentHousehold?.battery_ip && batteryData && !batteryError && offset === 0 && (
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 className="text-lg font-semibold text-slate-800 mb-4">🏠 Thuisbatterij</h3>
                         <div className="flex items-center gap-4">
@@ -153,7 +193,7 @@ export function Dashboard() {
 
 function StatCard({ title, value, color, diff }: { title: string, value: string, color: string, diff: number | null }) {
     return (
-        <div className={`bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 ${color} border border-slate-200`}>
+        <div className={`bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 ${color} border border-slate-200 transition-all hover:translate-y-[-2px] hover:shadow-md`}>
             <h4 className="text-xs md:text-sm font-medium text-slate-500 mb-1">{title}</h4>
             <div className="flex justify-between items-end">
                 <p className="text-xl md:text-2xl font-bold text-slate-900">{value}</p>
