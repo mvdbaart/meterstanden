@@ -68,13 +68,55 @@ export function Dashboard() {
 
     const getDiff = (current: number, prev: number) => {
         if (prev === 0) return null;
-        const diff = ((current - prev) / prev) * 100;
-        return diff;
+        return ((current - prev) / prev) * 100;
     };
 
     return (
         <div className="flex flex-col gap-4 md:gap-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            {/* Top real-time monitoring cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                {/* HomeWizard P1 Widget - Always visible */}
+                {hasP1 && (
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
+                            Actueel Verbruik (P1)
+                            {p1Data ? <span className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span> : null}
+                        </h3>
+                        {p1Error ? (
+                            <div className="text-red-500 text-sm">Verbindingsfout met P1 Meter.</div>
+                        ) : p1Data ? (
+                            <div className="flex flex-col gap-2">
+                                <div className="text-4xl font-bold text-slate-900">{p1Data.active_power_w} <span className="text-lg font-normal text-slate-500">Watt</span></div>
+                                <div className="text-sm text-slate-500">Real-time stroomverbruik via P1 meter</div>
+                            </div>
+                        ) : (
+                            <div className="text-slate-400 text-sm animate-pulse">Laden...</div>
+                        )}
+                    </div>
+                )}
+
+                {/* Battery Status (if available) - Always visible */}
+                {currentHousehold?.battery_ip && batteryData && !batteryError && (
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <span>🏠 Thuisbatterij</span>
+                            <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>
+                        </h3>
+                        <div className="flex items-center gap-4">
+                            <div className="text-4xl font-bold text-blue-600">{batteryData.percentage}%</div>
+                            <div className="flex-1 max-w-[200px] bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-100">
+                                <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${batteryData.percentage}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="mt-2 text-sm text-slate-500">
+                            {batteryData.soc_kwh.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh beschikbaar ({batteryData.mode})
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Overzicht Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mt-2">
                 <div className="flex items-center gap-4 w-full lg:w-auto">
                     <h2 className="text-2xl font-bold text-slate-800">Overzicht</h2>
                     <div className="flex items-center bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-sm">
@@ -113,6 +155,7 @@ export function Dashboard() {
                 </div>
             </div>
 
+            {/* Statistic Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <StatCard
                     title="Gasverbruik"
@@ -140,44 +183,7 @@ export function Dashboard() {
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                {/* HomeWizard P1 Widget - Only show for CURRENT period (offset 0) */}
-                {hasP1 && offset === 0 && (
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex justify-between items-center">
-                            Actueel Verbruik (P1)
-                            {p1Data ? <span className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span> : null}
-                        </h3>
-                        {p1Error ? (
-                            <div className="text-red-500 text-sm">Verbindingsfout met P1 Meter.</div>
-                        ) : p1Data ? (
-                            <div className="flex flex-col gap-2">
-                                <div className="text-4xl font-bold text-slate-900">{p1Data.active_power_w} <span className="text-lg font-normal text-slate-500">Watt</span></div>
-                                <div className="text-sm text-slate-500">Real-time stroomverbruik via P1 meter</div>
-                            </div>
-                        ) : (
-                            <div className="text-slate-400 text-sm animate-pulse">Laden...</div>
-                        )}
-                    </div>
-                )}
-
-                {/* Battery Status (if available) - Only show for CURRENT period (offset 0) */}
-                {currentHousehold?.battery_ip && batteryData && !batteryError && offset === 0 && (
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4">🏠 Thuisbatterij</h3>
-                        <div className="flex items-center gap-4">
-                            <div className="text-4xl font-bold text-blue-600">{batteryData.percentage}%</div>
-                            <div className="flex-1 max-w-[200px] bg-slate-100 h-3 rounded-full overflow-hidden">
-                                <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${batteryData.percentage}%` }}></div>
-                            </div>
-                        </div>
-                        <div className="mt-2 text-sm text-slate-500">
-                            {batteryData.soc_kwh.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh beschikbaar ({batteryData.mode})
-                        </div>
-                    </div>
-                )}
-            </div>
-
+            {/* Trend Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 <ChartCard title="Trend Elektriciteit" data={chartData} dataKey="electricity" color="#eab308" name="kWh" />
                 <ChartCard title="Trend Gas" data={chartData} dataKey="gas" color="#f97316" name="m³" />
