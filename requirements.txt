@@ -1,0 +1,26 @@
+# Utility Insight - Requirements
+
+## System Requirements
+- Node.js >= 18.0.0
+- npm >= 9.0.0 (komt met Node.js)
+
+## Browser Support
+- Chrome/Chromium 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+## Optional Hardware
+- HomeWizard P1 Meter (voor live energieverbruik)
+  - Zie: https://www.homewizard.com/
+
+## Installation Dependencies
+Alle JavaScript dependencies worden beheerd via npm en staan in package.json:
+- React 19.2.0
+- React Router DOM 7.13.1
+- Tailwind CSS 4.2.1
+- Recharts 3.8.0
+- IndexedDB (idb) 8.0.3
+- XLSX (voor Excel import) 0.18.5
+
+Deze worden automatisch geïnstalleerd met: npm install
