@@ -102,6 +102,22 @@ export async function addMeterReadings(readings: MeterReading[]) {
     return res.json();
 }
 
+export async function updateMeterReading(id: string, updates: Partial<MeterReading>) {
+    const res = await fetch(`${API_BASE}/meter_readings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+    });
+    return res.json();
+}
+
+export async function deleteMeterReading(id: string) {
+    const res = await fetch(`${API_BASE}/meter_readings/${id}`, {
+        method: 'DELETE'
+    });
+    return res.json();
+}
+
 // Migration Logic
 export async function migrateLocalDataToServer() {
     try {

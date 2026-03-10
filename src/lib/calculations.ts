@@ -1,24 +1,34 @@
 import type { MeterReading, Tariffs, UtilityType } from './types';
 
-export function calculateConsumption(readings: MeterReading[], type: UtilityType, tariffType?: string) {
-    const filtered = readings.filter(r => r.type === type && (!tariffType || r.tariff === tariffType));
+export type TimePeriod = 'week' | 'month' | 'year';
+
+export function calculateConsumption(readings: MeterReading[], type: UtilityType, tariffType?: string, startDate?: Date, endDate?: Date) {
+    const filtered = readings.filter(r => {
+        const isType = r.type === type;
+        const isTariff = !tariffType || r.tariff === tariffType;
+        const rDate = new Date(r.date);
+        const inStart = !startDate || rDate >= startDate;
+        const inEnd = !endDate || rDate <= endDate;
+        return isType && isTariff && inStart && inEnd;
+    });
+
     if (filtered.length < 2) return 0;
 
     const sorted = [...filtered].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const first = sorted[0].reading_value;
     const last = sorted[sorted.length - 1].reading_value;
-    return Math.max(0, last - first); // Simple total consumption over the period
+    return Math.max(0, last - first);
 }
 
-export function calculateCosts(readings: MeterReading[], tariffs: Tariffs | null) {
+export function calculateCosts(readings: MeterReading[], tariffs: Tariffs | null, startDate?: Date, endDate?: Date) {
     if (!tariffs) return 0;
 
-    const gasConsumption = calculateConsumption(readings, 'gas');
-    const waterConsumption = calculateConsumption(readings, 'water');
-    const elecHighConsumption = calculateConsumption(readings, 'electricity', 'high');
-    const elecLowConsumption = calculateConsumption(readings, 'electricity', 'low');
-    const elecReturn = calculateConsumption(readings, 'electricity', 'return');
-    const elecNormal = calculateConsumption(readings, 'electricity', 'normal');
+    const gasConsumption = calculateConsumption(readings, 'gas', undefined, startDate, endDate);
+    const waterConsumption = calculateConsumption(readings, 'water', undefined, startDate, endDate);
+    const elecHighConsumption = calculateConsumption(readings, 'electricity', 'high', startDate, endDate);
+    const elecLowConsumption = calculateConsumption(readings, 'electricity', 'low', startDate, endDate);
+    const elecReturn = calculateConsumption(readings, 'electricity', 'return', startDate, endDate);
+    const elecNormal = calculateConsumption(readings, 'electricity', 'normal', startDate, endDate);
 
     const gasCost = gasConsumption * tariffs.gas_price;
     const waterCost = waterConsumption * tariffs.water_price;
@@ -30,33 +40,67 @@ export function calculateCosts(readings: MeterReading[], tariffs: Tariffs | null
     return gasCost + waterCost + elecCost;
 }
 
-// Generate data for charts grouped by month
-export function getMonthlyData(readings: MeterReading[]) {
-    const dataMap = new Map<string, { gas: number, water: number, electricity: number }>();
+export function getPeriodBoundaries(period: TimePeriod, offset: number = 0) {
+    const now = new Date();
+    const start = new Date();
+    const end = new Date();
 
-    // This is a simplified approach: we take the raw readings and just plot them or we calculate diff per month.
-    // For the MVP, we just bucket the readings by YYYY-MM and take the max reading in that month to show a trend line
-    // or calculate the diff between months. Let's do raw max reading trend for line chart to be simple, 
-    // or diff for bar chart.
+    if (period === 'week') {
+        const day = now.getDay() || 7; // 1-7 (Mon-Sun)
+        start.setDate(now.getDate() - day + 1 + (offset * 7));
+        start.setHours(0, 0, 0, 0);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+    } else if (period === 'month') {
+        start.setMonth(now.getMonth() + offset, 1);
+        start.setHours(0, 0, 0, 0);
+        end.setMonth(start.getMonth() + 1, 0);
+        end.setHours(23, 59, 59, 999);
+    } else if (period === 'year') {
+        start.setFullYear(now.getFullYear() + offset, 0, 1);
+        start.setHours(0, 0, 0, 0);
+        end.setFullYear(start.getFullYear(), 11, 31);
+        end.setHours(23, 59, 59, 999);
+    }
 
-    // To get consumption per month, we need the first and last reading of each month.
+    return { start, end };
+}
+
+export function getTrendData(readings: MeterReading[], period: TimePeriod) {
+    const { start, end } = getPeriodBoundaries(period);
     const sorted = [...readings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    sorted.forEach(r => {
-        const month = r.date.substring(0, 7); // YYYY-MM
-        if (!dataMap.has(month)) {
-            dataMap.set(month, { gas: 0, water: 0, electricity: 0 });
+    // For specific trend data, we want to show consumption per day/period
+    // But to keep it simple and responsive, let's calculate consumption since 'start' for each reading after 'start'
+    const periodReadings = sorted.filter(r => new Date(r.date) >= start && new Date(r.date) <= end);
+
+    if (periodReadings.length === 0) return [];
+
+    // Map to cumulative consumption within this period
+    const types: UtilityType[] = ['gas', 'water', 'electricity'];
+    const initialReadings: Record<string, number> = {};
+
+    types.forEach(type => {
+        const before = sorted.filter(r => r.type === type && new Date(r.date) < start);
+        if (before.length > 0) {
+            initialReadings[type] = before[before.length - 1].reading_value;
+        } else {
+            const firstInPeriod = periodReadings.find(r => r.type === type);
+            initialReadings[type] = firstInPeriod ? firstInPeriod.reading_value : 0;
         }
     });
 
-    // Calculate consumption per month...
-    // For MVP simplicity, we just return the raw readings mapped for trendlines
-    const trendData = sorted.map(r => ({
-        date: r.date,
-        gas: r.type === 'gas' ? r.reading_value : undefined,
-        water: r.type === 'water' ? r.reading_value : undefined,
-        electricity: r.type === 'electricity' ? r.reading_value : undefined,
-    }));
+    const dates = Array.from(new Set(periodReadings.map(r => r.date))).sort();
 
-    return trendData;
+    return dates.map(date => {
+        const data: any = { date };
+        types.forEach(type => {
+            const rd = periodReadings.filter(r => r.type === type && r.date <= date);
+            if (rd.length > 0) {
+                const latest = rd[rd.length - 1].reading_value;
+                data[type] = Math.max(0, latest - initialReadings[type]);
+            }
+        });
+        return data;
+    });
 }

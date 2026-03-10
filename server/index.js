@@ -95,6 +95,25 @@ app.post('/api/meter_readings', async (req, res) => {
     res.json(reading);
 });
 
+app.put('/api/meter_readings/:id', async (req, res) => {
+    const db = await readDb();
+    const index = db.meter_readings.findIndex(r => r.id === req.params.id);
+    if (index >= 0) {
+        db.meter_readings[index] = { ...db.meter_readings[index], ...req.body };
+        await saveDb(db);
+        res.json(db.meter_readings[index]);
+    } else {
+        res.status(404).json({ error: 'Not found' });
+    }
+});
+
+app.delete('/api/meter_readings/:id', async (req, res) => {
+    const db = await readDb();
+    db.meter_readings = db.meter_readings.filter(r => r.id !== req.params.id);
+    await saveDb(db);
+    res.json({ success: true });
+});
+
 app.post('/api/meter_readings/batch', async (req, res) => {
     const db = await readDb();
     const readings = req.body;

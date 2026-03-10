@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getMeterReadings, addMeterReading, addMeterReadings } from '../lib/db';
+import { getMeterReadings, addMeterReading, addMeterReadings, updateMeterReading, deleteMeterReading } from '../lib/db';
 import type { MeterReading, UtilityType } from '../lib/types';
 import { useAppContext } from '../context/AppContext';
 
@@ -9,7 +9,7 @@ function generateUUID(): string {
         return crypto.randomUUID();
     }
     // Fallback implementatie
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         const r = (Math.random() * 16) | 0;
         const v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
@@ -73,5 +73,25 @@ export function useMeterReadings(type?: UtilityType) {
         }
     };
 
-    return { readings, isLoading, addReading, addMultipleReadings, refreshReadings: loadReadings };
+    const updateReading = async (id: string, updates: Partial<MeterReading>) => {
+        try {
+            await updateMeterReading(id, updates);
+            await loadReadings();
+        } catch (error) {
+            console.error("Error updating meter reading:", error);
+            throw error;
+        }
+    };
+
+    const removeReading = async (id: string) => {
+        try {
+            await deleteMeterReading(id);
+            await loadReadings();
+        } catch (error) {
+            console.error("Error deleting meter reading:", error);
+            throw error;
+        }
+    };
+
+    return { readings, isLoading, addReading, addMultipleReadings, updateReading, removeReading, refreshReadings: loadReadings };
 }

@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Edit3, Cpu, Settings, Menu, X } from 'lucide-react';
+import { Home, Edit3, Cpu, Settings, Menu, X, Database } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/entry', label: 'Invoer', icon: Edit3 },
+    { to: '/management', label: 'Beheer', icon: Database },
     { to: '/analysis', label: 'AI Analyse', icon: Cpu },
     { to: '/settings', label: 'Instellingen', icon: Settings },
 ];

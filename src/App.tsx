@@ -5,6 +5,7 @@ import { Settings } from './pages/Settings';
 import { MeterEntry } from './pages/MeterEntry';
 import { Dashboard } from './pages/Dashboard';
 import { AIAnalysis } from './pages/AIAnalysis';
+import { DataManagement } from './pages/DataManagement';
 import { useAppContext } from './context/AppContext';
 
 function RequireHousehold({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ function App() {
         <Routes>
           <Route path="/" element={<RequireHousehold><Dashboard /></RequireHousehold>} />
           <Route path="/entry" element={<RequireHousehold><MeterEntry /></RequireHousehold>} />
+          <Route path="/management" element={<RequireHousehold><DataManagement /></RequireHousehold>} />
           <Route path="/analysis" element={<RequireHousehold><AIAnalysis /></RequireHousehold>} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
