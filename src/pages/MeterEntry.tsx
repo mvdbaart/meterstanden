@@ -222,7 +222,7 @@ export function MeterEntry() {
                                 value={value}
                                 onChange={(e) => setValue(e.target.value)}
                                 className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="0.00"
+                                placeholder="0.000"
                             />
                         </div>
                     </div>

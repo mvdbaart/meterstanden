@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMeterReadings } from '../hooks/useMeterReadings';
 import { Trash2, Edit2, Check, X, Search } from 'lucide-react';
-import type { UtilityType, MeterReading, TariffType } from '../lib/types';
+import type { UtilityType, MeterReading } from '../lib/types';
 
 export function DataManagement() {
     const { readings, isLoading, updateReading, removeReading } = useMeterReadings();
@@ -11,14 +11,18 @@ export function DataManagement() {
     const [editValue, setEditValue] = useState('');
     const [editDate, setEditDate] = useState('');
 
-    const filteredReadings = readings
+    const filteredReadings = (readings || [])
         .filter(r => filterType === 'all' || r.type === filterType)
-        .filter(r => r.date.includes(searchTerm) || r.reading_value.toString().includes(searchTerm))
+        .filter(r => {
+            const val = r.reading_value?.toString() || '';
+            const date = r.date || '';
+            return date.includes(searchTerm) || val.includes(searchTerm);
+        })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const handleEdit = (reading: MeterReading) => {
         setEditingId(reading.id);
-        setEditValue(reading.reading_value.toString());
+        setEditValue(reading.reading_value?.toString() || '0');
         setEditDate(reading.date);
     };
 
@@ -48,7 +52,10 @@ export function DataManagement() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h2 className="text-xl font-semibold text-slate-800">Gegevensbeheer</h2>
+                <div className="flex flex-col">
+                    <h2 className="text-xl font-semibold text-slate-800">Gegevensbeheer</h2>
+                    <p className="text-xs text-slate-500 mt-1">{readings.length} opnames gevonden</p>
+                </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <div className="relative">
@@ -93,7 +100,9 @@ export function DataManagement() {
                                 </tr>
                             ) : filteredReadings.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400">Geen gegevens gevonden.</td>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                                        {readings.length === 0 ? 'Geen data beschikbaar in de database.' : 'Geen resultaten voor deze zoekopdracht.'}
+                                    </td>
                                 </tr>
                             ) : (
                                 filteredReadings.map((r) => (
@@ -126,7 +135,7 @@ export function DataManagement() {
                                                     className="px-2 py-1 border rounded text-sm w-full max-w-[120px]"
                                                 />
                                             ) : (
-                                                `${r.reading_value.toLocaleString(undefined, { minimumFractionDigits: 3 })} ${r.type === 'electricity' ? 'kWh' : 'm³'}`
+                                                `${(r.reading_value || 0).toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${r.type === 'electricity' ? 'kWh' : 'm³'}`
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">

@@ -17,17 +17,14 @@ export function Dashboard() {
 
     // Battery state
     const [batteryData, setBatteryData] = useState<BatteryStatus | null>(null);
-    const [batteryLoading, setBatteryLoading] = useState(false);
     const [batteryError, setBatteryError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!currentHousehold?.battery_ip) return;
         const fetchBattery = async () => {
-            setBatteryLoading(true);
             const status = await getBatteryStatus(currentHousehold.battery_ip!, currentHousehold.battery_port);
             setBatteryData(status);
             setBatteryError(status?.error || null);
-            setBatteryLoading(false);
         };
         fetchBattery();
         const interval = setInterval(fetchBattery, 10000);
@@ -46,7 +43,6 @@ export function Dashboard() {
 
     // Format period label
     const periodLabel = useMemo(() => {
-        const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
         if (period === 'year') return currentStart.getFullYear().toString();
         if (period === 'month') return currentStart.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
 
@@ -107,8 +103,8 @@ export function Dashboard() {
                             key={p}
                             onClick={() => handlePeriodChange(p)}
                             className={`flex-1 lg:flex-none px-6 py-1.5 rounded-lg text-sm font-medium transition-all ${period === p
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -120,25 +116,25 @@ export function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <StatCard
                     title="Gasverbruik"
-                    value={`${gasCurrent.toFixed(1)} m³`}
+                    value={`${gasCurrent.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} m³`}
                     color="border-orange-500"
                     diff={getDiff(gasCurrent, gasPrev)}
                 />
                 <StatCard
                     title="Waterverbruik"
-                    value={`${waterCurrent.toFixed(1)} m³`}
+                    value={`${waterCurrent.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} m³`}
                     color="border-blue-500"
                     diff={getDiff(waterCurrent, waterPrev)}
                 />
                 <StatCard
                     title="Elektriciteit"
-                    value={`${elecCurrent.toFixed(1)} kWh`}
+                    value={`${elecCurrent.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh`}
                     color="border-yellow-500"
                     diff={getDiff(elecCurrent, elecPrev)}
                 />
                 <StatCard
                     title="Kosten"
-                    value={`€ ${costsCurrent.toFixed(2)}`}
+                    value={`€ ${costsCurrent.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     color="border-green-500"
                     diff={getDiff(costsCurrent, costsPrev)}
                 />
@@ -176,7 +172,7 @@ export function Dashboard() {
                             </div>
                         </div>
                         <div className="mt-2 text-sm text-slate-500">
-                            {batteryData.soc_kwh.toFixed(1)} kWh beschikbaar ({batteryData.mode})
+                            {batteryData.soc_kwh.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kWh beschikbaar ({batteryData.mode})
                         </div>
                     </div>
                 )}

@@ -66,8 +66,8 @@ export function getPeriodBoundaries(period: TimePeriod, offset: number = 0) {
     return { start, end };
 }
 
-export function getTrendData(readings: MeterReading[], period: TimePeriod) {
-    const { start, end } = getPeriodBoundaries(period);
+export function getTrendData(readings: MeterReading[], period: TimePeriod, offset: number = 0) {
+    const { start, end } = getPeriodBoundaries(period, offset);
     const sorted = [...readings].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // For specific trend data, we want to show consumption per day/period
